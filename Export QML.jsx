@@ -156,6 +156,7 @@ function openQMLFile() {
     }
 }
 
+// Closes the "Item" tag and the QML file.
 function closeQMLFile() {
     if(exportInfo.exportQML) {
         qmlfile.write("}\n");
@@ -386,7 +387,20 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
         progressPanel.myProgressBar.value = (layerIndex++)/layerCount;
         app.refresh();      // required for progressbar updates
 
+        // Skip hidden layers.
+        var visible = orgObj.layers[i].visible;
+        if (!visible && !exportInfo.exportHidden) {
+            continue;
+        }
+
         var currentLayer = dupObj.layers[i];
+
+        // Ignore empty text layers
+        if (currentLayer.kind == LayerKind.TEXT &&
+            currentLayer.textItem.contents == "") {
+            continue;
+        }
+
         // Ensure unique layer names.
         while (names[currentLayer.name]) {
             // For some or other reason, this writeln crashes PS when not running
@@ -409,18 +423,6 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
             }
         }
 
-        // Skip hidden layers.
-        var visible = orgObj.layers[i].visible;
-        if (!visible && !exportInfo.exportHidden) {
-            continue;
-        }
-
-        // Ignore empty text layers
-        if (currentLayer.kind == LayerKind.TEXT &&
-            currentLayer.textItem.contents == "") {
-            continue;
-        }
-
         // Since we already save opacity, we dont want it affecting the output image
         var opacity = currentLayer.opacity / 100.0;
         currentLayer.opacity = 100;
@@ -430,7 +432,7 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
         // Trim copied document to layer bounds
         if (activeDocument.activeLayer.isBackgroundLayer == false) {
             var bounds = currentLayer.bounds
-            activeDocument.crop (bounds, 0, bounds.width, bounds.height)
+            activeDocument.crop(bounds, 0, bounds.width, bounds.height)
         }
 
         var layerName = dupObj.layers[i].name; // store layer name before change doc
