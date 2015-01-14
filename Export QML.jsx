@@ -126,7 +126,7 @@ function qtColor(color) {
 function createProgressBar() {
     var myMaximumValue = 1.0;
     var myProgressBarWidth = 300;
-    progressPanel = new Window('window', 'Exporting document to QML...');
+    progressPanel = new Window('palette', 'Exporting document to QML...');
     progressPanel.myProgressBar = progressPanel.add('progressbar',
         [12, 12, myProgressBarWidth, 24], 0, myMaximumValue);
 
@@ -384,6 +384,7 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
 
     for (var i = dupObj.layers.length - 1; i >= 0 && !cancelExport; i--) {
         progressPanel.myProgressBar.value = (layerIndex++)/layerCount;
+        app.refresh();      // required for progressbar updates
 
         var currentLayer = dupObj.layers[i];
         // Ensure unique layer names.
