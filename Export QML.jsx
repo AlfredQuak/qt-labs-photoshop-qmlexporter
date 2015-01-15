@@ -57,6 +57,26 @@ var exportByGroupKey = 3;
 var exportHiddenKey = 4;
 var exportQMLKey = 5;
 
+// From http://doc.qt.io/qt-5/qtqml-syntax-objectattributes.html
+// 'This id must begin with a lower-case letter or an underscore,
+// and cannot contain characters other than letters, numbers and
+// underscores' Based on my interpretation of the QML id requirements
+// I decided to only allow for the following categories
+// http://www.fileformat.info/info/unicode/category/Ll/list.htm
+// http://www.fileformat.info/info/unicode/category/Lu/list.htm
+// The regex below was generated with the help of this site:
+// http://apps.timwhitlock.info/js/regex
+var re = new RegExp('[^A-Za-zªµºÀ-ÖØ-öø-ƺƼ-ƿǄǆ-Ǉǉ-Ǌǌ-Ǳǳ-ʓʕ-ʯͰ-ͳͶ-ͷͻ-ͽΆΈ-ΊΌ' +
+'Ύ-ΡΣ-ϵϷ-ҁҊ-ԣԱ-Ֆա-ևႠ-Ⴥᴀ-ᴫᵢ-ᵷᵹ-ᶚḀ-ἕἘ-Ἕἠ-ὅὈ-Ὅὐ-ὗὙὛὝὟ-ώᾀ-ᾇ' +
+'ᾐ-ᾗᾠ-ᾧᾰ-ᾴᾶ-Άιῂ-ῄῆ-Ήῐ-ΐῖ-Ίῠ-Ῥῲ-ῴῶ-Ώⁱⁿℂℇℊ-ℓℕℙ-ℝℤΩℨK-ℭℯ-ℴℹℼ-ℿⅅ-ⅉ' +
+'ⅎↃ-ↄⰀ-Ⱞⰰ-ⱞⱠ-Ɐⱱ-ⱼⲀ-ⳤⴀ-ⴥꙀ-ꙟꙢ-ꙭꚀ-ꚗꜢ-ꝯꝱ-ꞇꞋ-ꞌﬀ-ﬆﬓ-ﬗＡ-Ｚａ-ｚ0-9' +
+'|\\ud801\\udc00-\\udc4f|\\ud835\\udc00-\\udc54\\udc56-\\udc9c\\udc9e-\\udc9f' +
+'\\udca2\\udca5-\\udca6\\udca9-\\udcac\\udcae-\\udcb9\\udcbb\\udcbd-\\udcc3' +
+'\\udcc5-\\udd05\\udd07-\\udd0a\\udd0d-\\udd14\\udd16-\\udd1c\\udd1e-\\udd39' +
+'\\udd3b-\\udd3e\\udd40-\\udd44\\udd46\\udd4a-\\udd50\\udd52-\\udea5\\udea8-\\udec0' +
+'\\udec2-\\udeda\\udedc-\\udefa\\udefc-\\udf14\\udf16-\\udf34\\udf36-\\udf4e' +
+'\\udf50-\\udf6e\\udf70-\\udf88\\udf8a-\\udfa8\\udfaa-\\udfc2\\udfc4-\\udfcb]', 'g');
+
 Array.prototype.indexOf = function(elt /*, from*/) {
     var from = Number(arguments[1]) || 0;
     from = (from < 0) ? Math.ceil(from) : Math.floor(from);
@@ -71,6 +91,20 @@ Array.prototype.indexOf = function(elt /*, from*/) {
         }
     }
     return -1;
+};
+
+String.prototype.trimLeft = function(charlist) {
+    if (charlist === undefined) {
+        charlist = "\s";
+    }
+    return this.replace(new RegExp("^[" + charlist + "]+"), "");
+};
+
+String.prototype.trimRight = function(charlist) {
+    if (charlist === undefined) {
+        charlist = "\s";
+    }
+    return this.replace(new RegExp("[" + charlist + "]+$"), "");
 };
 
 main();
@@ -346,6 +380,19 @@ function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename
     qmlfile.write("    }\n");
 }
 
+// Replaces all illegal characters with an underscore.
+function getValidQMLID(layerName) {
+    var id = layerName.toLowerCase();
+    id = id.replace(re, "_");       // replace illegal characters
+    id = id.replace(/_+/g, '_');    // replace potential consecutive duplicates
+    id = id.trimLeft('\\d_');       // remove leading digits and underscores
+    id = id.trimRight('_');         // remove trailing underscores
+    if (id.length > 120) {
+        id = id.substring(0, 120);
+    }
+    return id;
+}
+
 function main() {
     exportInfo = new Object();
     if (cancelButton == setupDialog(exportInfo)) {
@@ -436,12 +483,7 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
         }
 
         var layerName = dupObj.layers[i].name; // store layer name before change doc
-        var fileNameBody = layerName.toLowerCase();
-        fileNameBody = fileNameBody.replace(/[ :\/\\*\?\"\<\>\|#]/g, "_"); // '/\:*?"<>|' -> '_'
-        if (fileNameBody.length > 120) {
-            fileNameBody = fileNameBody.substring(0, 120);
-        }
-
+        var fileNameBody = getValidQMLID(layerName);
         var filename = fileNameBody + ".png";
         var isText = (currentLayer.kind == LayerKind.TEXT && !(exportInfo.rasterizeText))
 
