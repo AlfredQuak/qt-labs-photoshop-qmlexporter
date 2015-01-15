@@ -109,8 +109,7 @@ String.prototype.trimRight = function(charlist) {
 
 main();
 
-function hexValue(dec)
-{
+function hexValue(dec) {
     var result;
     switch (dec) {
         case 10:
@@ -183,7 +182,7 @@ function openQMLFile() {
         qmlfile = new File(outputName);
         qmlfile.encoding = "UTF8";
         qmlfile.open("w", "TEXT", "");
-        qmlfile.write("import Qt 4.7\n");
+        qmlfile.write("import " + exportInfo.qtimport + "\n");
         qmlfile.write("Item {\n");
         qmlfile.write("    width:" + app.activeDocument.width.as("px") + "\n");
         qmlfile.write("    height:" + app.activeDocument.height.as("px") + "\n");
@@ -218,34 +217,43 @@ function setupDialog(exportInfo) {
     mainDialog.outputName = mainDialog.groupFirstLine.add("edittext", undefined, "MyElement");
     mainDialog.outputName.preferredSize.width = 220
 
-    // "Output Folder".
+    // Qt import module.
     mainDialog.groupSecondLine = mainDialog.add("group");
     mainDialog.groupSecondLine.orientation = 'row';
     mainDialog.groupSecondLine.alignChildren = 'left';
+    mainDialog.groupSecondLine.alignment = 'fill';
+    mainDialog.groupSecondLine.add("statictext", undefined, "Primary Import:");
+    mainDialog.qtimport = mainDialog.groupSecondLine.add("edittext", undefined, "QtQuick 2.2");
+    mainDialog.qtimport.preferredSize.width = 220
 
-    mainDialog.groupSecondLine.add("statictext", undefined, "Output Folder:");
-    mainDialog.destinationFolder = mainDialog.groupSecondLine.add("edittext", undefined, "");
-    mainDialog.destinationFolder.preferredSize.width = 220;
-    mainDialog.buttonBrowse = mainDialog.groupSecondLine.add("button", undefined, "Browse..");
-
-    // Checkboxes.
+    // "Output Folder".
     mainDialog.groupThirdLine = mainDialog.add("group");
     mainDialog.groupThirdLine.orientation = 'row';
-    mainDialog.groupThirdLine.alignChildren = 'right';
-    mainDialog.groupThirdLine.alignment = 'right';
+    mainDialog.groupThirdLine.alignChildren = 'left';
 
-    mainDialog.rasterizeText = mainDialog.groupThirdLine.add("checkbox", undefined, "Rasterize Text");
-    mainDialog.exportByGroup = mainDialog.groupThirdLine.add("checkbox", undefined, "Group layers");
-    mainDialog.exportHidden = mainDialog.groupThirdLine.add("checkbox", undefined, "Export hidden");
-    mainDialog.exportQML = mainDialog.groupThirdLine.add("checkbox", undefined, "Export QML");
+    mainDialog.groupThirdLine.add("statictext", undefined, "Output Folder:");
+    mainDialog.destinationFolder = mainDialog.groupThirdLine.add("edittext", undefined, "");
+    mainDialog.destinationFolder.preferredSize.width = 220;
+    mainDialog.buttonBrowse = mainDialog.groupThirdLine.add("button", undefined, "Browse..");
 
-    // Dialog buttons.
+    // Checkboxes.
     mainDialog.groupFourthLine = mainDialog.add("group");
     mainDialog.groupFourthLine.orientation = 'row';
     mainDialog.groupFourthLine.alignChildren = 'right';
     mainDialog.groupFourthLine.alignment = 'right';
 
-    mainDialog.buttonRun = mainDialog.groupFourthLine .add("button", undefined, "Export");
+    mainDialog.rasterizeText = mainDialog.groupFourthLine.add("checkbox", undefined, "Rasterize Text");
+    mainDialog.exportByGroup = mainDialog.groupFourthLine.add("checkbox", undefined, "Group layers");
+    mainDialog.exportHidden = mainDialog.groupFourthLine.add("checkbox", undefined, "Export hidden");
+    mainDialog.exportQML = mainDialog.groupFourthLine.add("checkbox", undefined, "Export QML");
+
+    // Dialog buttons.
+    mainDialog.groupFifthLine = mainDialog.add("group");
+    mainDialog.groupFifthLine.orientation = 'row';
+    mainDialog.groupFifthLine.alignChildren = 'right';
+    mainDialog.groupFifthLine.alignment = 'right';
+
+    mainDialog.buttonRun = mainDialog.groupFifthLine .add("button", undefined, "Export");
     mainDialog.defaultElement = mainDialog.buttonRun
 
     // Button actions.
@@ -272,7 +280,7 @@ function setupDialog(exportInfo) {
         mainDialog.close(runButton);
     }
 
-    mainDialog.buttonCancel = mainDialog.groupFourthLine .add("button", undefined, "Cancel");
+    mainDialog.buttonCancel = mainDialog.groupFifthLine .add("button", undefined, "Cancel");
     mainDialog.buttonCancel.onClick = function () {
         mainDialog.close(cancelButton);
     }
@@ -317,6 +325,7 @@ function setupDialog(exportInfo) {
         exportInfo.exportByGroup = mainDialog.exportByGroup.value;
         exportInfo.exportHidden = mainDialog.exportHidden.value;
         exportInfo.rasterizeText = mainDialog.rasterizeText.value;
+        exportInfo.qtimport = mainDialog.qtimport.text;
     }
     return result;
 }
@@ -363,7 +372,7 @@ function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename
         // figure out which metric we need to use ascending, perhaps?
         yoffset -= textItem.size.as("px") / 4;
 
-        qmlfile.write("        text: \"" + textItem.contents + "\"\n");
+        qmlfile.write("        text: qsTr(\"" + textItem.contents + "\")\n");
         qmlfile.write("        font.pixelSize: " + Math.floor(textItem.size.as("px")) + "\n");
         qmlfile.write("        font.family: \"" + textItem.font + "\"\n");
         if (textItem.font.indexOf("Bold") != -1) qmlfile.write("        font.bold: true\n");
@@ -384,7 +393,7 @@ function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename
 function getValidQMLID(layerName) {
     var id = layerName.toLowerCase();
     id = id.replace(re, "_");       // replace illegal characters
-    id = id.replace(/_+/g, '_');    // replace potential consecutive duplicates
+    id = id.replace(/_+/g, '_');    // replace potential consecutive underscores
     id = id.trimLeft('\\d_');       // remove leading digits and underscores
     id = id.trimRight('_');         // remove trailing underscores
     if (id.length > 120) {
