@@ -175,7 +175,8 @@ function createProgressBar() {
 function openQMLFile() {
     if(exportInfo.exportQML) {
         var elementName = exportInfo.outputName;
-        if (elementName.indexOf(".qml") == -1) {	// Append .qml unless not explicitly set
+        // Append .qml unless not explicitly set
+        if (elementName.indexOf(".qml") == -1) {
             elementName += ".qml"
         }
         var outputName = exportInfo.destination + "/" + elementName;
@@ -469,6 +470,8 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
         if (!exportInfo.exportByGroup) {
             // Ignore layer groups and only show one layer at a time.
             if (currentLayer.typename== "LayerSet") {
+                // Recursively export layer sets.
+                exportChildren(dupObj.layers[i], orgObj.layers[i], exportInfo, dupDocRef);
                 continue;
             }
             dupObj.layers[i].visible = true
@@ -514,13 +517,6 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
 
         if (!exportInfo.exportByGroup) {
             dupObj.layers[i].visible = false
-        }
-    }
-
-    // Recursively export all the child layers of of this document (if any).
-    if (!exportInfo.exportByGroup) {
-        for (var i = 0; i < dupObj.layerSets.length; i++) {
-            exportChildren(dupObj.layerSets[i], orgObj.layerSets[i], exportInfo, dupDocRef);
         }
     }
 }
