@@ -356,10 +356,13 @@ function hideAll(obj) {
 }
 
 function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename) {
-    if (isText) qmlfile.write("    Text {\n");
-    else qmlfile.write("    Image {\n");
-    qmlfile.write("        id: " + id + "\n");
-    if (!visible) qmlfile.write("        visible: " + visible+ "\n");
+    var component_id = id + "_component";
+    qmlfile.write("    property alias " + id + ": " + component_id + "\n");
+    qmlfile.write("    Component {\n");
+    qmlfile.write("        id: " + component_id + "\n");
+    if (isText) qmlfile.write("        Text {\n");
+    else qmlfile.write("        Image {\n");
+    if (!visible) qmlfile.write("            visible: " + visible+ "\n");
 
     var xoffset = currentLayer.bounds[0].as("px");
     var yoffset = currentLayer.bounds[1].as("px");
@@ -372,20 +375,24 @@ function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename
         // figure out which metric we need to use ascending, perhaps?
         yoffset -= textItem.size.as("px") / 4;
 
-        qmlfile.write("        text: qsTr(\"" + textItem.contents + "\")\n");
-        qmlfile.write("        font.pixelSize: " + Math.floor(textItem.size.as("px")) + "\n");
-        qmlfile.write("        font.family: \"" + textItem.font + "\"\n");
-        if (textItem.font.indexOf("Bold") != -1) qmlfile.write("        font.bold: true\n");
-        if (textItem.font.indexOf("Italic") != -1) qmlfile.write("        font.italic: true\n");
-        qmlfile.write("        color: " + qtColor(currentLayer.textItem.color) + "\n");
-        qmlfile.write("        smooth: true\n");
+        qmlfile.write("            text: qsTr(\"" + textItem.contents + "\")\n");
+        qmlfile.write("            font.pixelSize: " + Math.floor(textItem.size.as("px")) + "\n");
+        qmlfile.write("            font.family: \"" + textItem.font + "\"\n");
+        if (textItem.font.indexOf("Bold") != -1) qmlfile.write("            font.bold: true\n");
+        if (textItem.font.indexOf("Italic") != -1) qmlfile.write("            font.italic: true\n");
+        qmlfile.write("            color: " + qtColor(currentLayer.textItem.color) + "\n");
+        qmlfile.write("            smooth: true\n");
     } else {
-        qmlfile.write("        source: \"images/" + filename + "\"\n");
+        qmlfile.write("            source: \"images/" + filename + "\"\n");
     }
 
-    qmlfile.write("        x: " + xoffset + "\n");
-    qmlfile.write("        y: " + yoffset + "\n");
-    qmlfile.write("        opacity: " + opacity + "\n");
+    qmlfile.write("            x: " + xoffset + "\n");
+    qmlfile.write("            y: " + yoffset + "\n");
+    qmlfile.write("            opacity: " + opacity + "\n");
+    qmlfile.write("        }\n");
+    qmlfile.write("    }\n");
+    qmlfile.write("    Loader {\n");
+    qmlfile.write("        sourceComponent: " + component_id + "\n");
     qmlfile.write("    }\n");
 }
 
@@ -468,7 +475,9 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
 
         if (!exportInfo.exportByGroup) {
             // Ignore layer groups and only show one layer at a time.
-            if (currentLayer.typename== "LayerSet") {
+            if (currentLayer.typename == "LayerSet") {
+                // Recursively export layer sets.
+                exportChildren(dupObj.layers[i], orgObj.layers[i], exportInfo, dupDocRef);
                 continue;
             }
             dupObj.layers[i].visible = true
@@ -514,13 +523,6 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
 
         if (!exportInfo.exportByGroup) {
             dupObj.layers[i].visible = false
-        }
-    }
-
-    // Recursively export all the child layers of of this document (if any).
-    if (!exportInfo.exportByGroup) {
-        for (var i = 0; i < dupObj.layerSets.length; i++) {
-            exportChildren(dupObj.layerSets[i], orgObj.layerSets[i], exportInfo, dupDocRef);
         }
     }
 }
