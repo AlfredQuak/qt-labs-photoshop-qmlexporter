@@ -175,7 +175,7 @@ function createProgressBar() {
 function openQMLFile() {
     if(exportInfo.exportQML) {
         var elementName = exportInfo.outputName;
-        if (elementName.indexOf(".qml") == -1) {	// Append .qml unless not explicitly set
+        if (elementName.indexOf(".qml") == -1) {    // Append .qml unless not explicitly set
             elementName += ".qml"
         }
         var outputName = exportInfo.destination + "/" + elementName;
@@ -186,6 +186,10 @@ function openQMLFile() {
         qmlfile.write("Item {\n");
         qmlfile.write("    width:" + app.activeDocument.width.as("px") + "\n");
         qmlfile.write("    height:" + app.activeDocument.height.as("px") + "\n");
+
+        qmlfile.write("    function hide(loaderId) {\n");
+        qmlfile.write("        loaderId.sourceComponent = undefined\n");
+        qmlfile.write("    }\n");
     }
 }
 
@@ -391,7 +395,9 @@ function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename
     qmlfile.write("            opacity: " + opacity + "\n");
     qmlfile.write("        }\n");
     qmlfile.write("    }\n");
+    qmlfile.write("    property alias " + id + "_loader: " + component_id + "_loader\n");
     qmlfile.write("    Loader {\n");
+    qmlfile.write("        id: " + component_id + "_loader\n");
     qmlfile.write("        sourceComponent: " + component_id + "\n");
     qmlfile.write("    }\n");
 }
