@@ -359,37 +359,44 @@ function hideAll(obj) {
     }
 }
 
-function writeQMLProperties(isText, visible, opacity, currentLayer, id, filename) {
+function writeTextProperty(currentLayer, id) {
+    var text_id = id + "_text";
+    qmlfile.write("    property alias " + id + ": " + text_id + "\n");
+    qmlfile.write("    Text {\n");
+    qmlfile.write("        id: " + text_id + "\n");
+
+    var textItem = currentLayer.textItem;
+
+    qmlfile.write("        text: qsTr(\"" + textItem.contents + "\")\n");
+    qmlfile.write("        font.pixelSize: " + Math.floor(textItem.size.as("px")) + "\n");
+    qmlfile.write("        font.family: \"" + textItem.font + "\"\n");
+    if (textItem.font.indexOf("Bold") != -1) qmlfile.write("        font.bold: true\n");
+    if (textItem.font.indexOf("Italic") != -1) qmlfile.write("        font.italic: true\n");
+    qmlfile.write("        color: " + qtColor(currentLayer.textItem.color) + "\n");
+    qmlfile.write("        smooth: true\n");
+
+    var xoffset = currentLayer.bounds[0].as("px");
+    var yoffset = currentLayer.bounds[1].as("px");
+    // ### Temporary hack to set font positioning
+    // Using pointsize doesnt work for some reason and we need to
+    // figure out which metric we need to use ascending, perhaps?
+    yoffset -= textItem.size.as("px") / 4;
+    qmlfile.write("        x: " + xoffset + "\n");
+    qmlfile.write("        y: " + yoffset + "\n");
+    qmlfile.write("    }\n");
+}
+
+function writeImageComponent(visible, opacity, currentLayer, id, filename) {
     var component_id = id + "_component";
     qmlfile.write("    property alias " + id + ": " + component_id + "\n");
     qmlfile.write("    Component {\n");
     qmlfile.write("        id: " + component_id + "\n");
-    if (isText) qmlfile.write("        Text {\n");
-    else qmlfile.write("        Image {\n");
+    qmlfile.write("        Image {\n");
     if (!visible) qmlfile.write("            visible: " + visible+ "\n");
+    qmlfile.write("            source: \"images/" + filename + "\"\n");
 
     var xoffset = currentLayer.bounds[0].as("px");
     var yoffset = currentLayer.bounds[1].as("px");
-
-    if (isText) {
-        var textItem = currentLayer.textItem;
-
-        // ### Temporary hack to set font positioning
-        // Using pointsize doesnt work for some reason and we need to
-        // figure out which metric we need to use ascending, perhaps?
-        yoffset -= textItem.size.as("px") / 4;
-
-        qmlfile.write("            text: qsTr(\"" + textItem.contents + "\")\n");
-        qmlfile.write("            font.pixelSize: " + Math.floor(textItem.size.as("px")) + "\n");
-        qmlfile.write("            font.family: \"" + textItem.font + "\"\n");
-        if (textItem.font.indexOf("Bold") != -1) qmlfile.write("            font.bold: true\n");
-        if (textItem.font.indexOf("Italic") != -1) qmlfile.write("            font.italic: true\n");
-        qmlfile.write("            color: " + qtColor(currentLayer.textItem.color) + "\n");
-        qmlfile.write("            smooth: true\n");
-    } else {
-        qmlfile.write("            source: \"images/" + filename + "\"\n");
-    }
-
     qmlfile.write("            x: " + xoffset + "\n");
     qmlfile.write("            y: " + yoffset + "\n");
     qmlfile.write("            opacity: " + opacity + "\n");
@@ -513,7 +520,11 @@ function exportChildren(dupObj, orgObj, exportInfo, dupDocRef) {
 
         // Write the QML object's properties to file.
         if (exportInfo.exportQML) {
-            writeQMLProperties(isText, visible, opacity, currentLayer, fileNameBody, filename)
+            if(isText) {
+                writeTextProperty(currentLayer, fileNameBody);
+            } else {
+                writeImageComponent(visible, opacity, currentLayer, fileNameBody, filename);
+            }
         }
 
         // Save the generated .png.
