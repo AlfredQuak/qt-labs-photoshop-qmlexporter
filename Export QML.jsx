@@ -227,7 +227,7 @@ function setupDialog(exportInfo) {
     mainDialog.groupSecondLine.alignChildren = 'left';
     mainDialog.groupSecondLine.alignment = 'fill';
     mainDialog.groupSecondLine.add("statictext", undefined, "Primary Import:");
-    mainDialog.qtimport = mainDialog.groupSecondLine.add("edittext", undefined, "QtQuick 2.2");
+    mainDialog.qtimport = mainDialog.groupSecondLine.add("edittext", undefined, "QtQuick 2.4");
     mainDialog.qtimport.preferredSize.width = 220
 
     // "Output Folder".
